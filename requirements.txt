@@ -1,0 +1,30 @@
+# PDF processing
+PyMuPDF==1.23.9
+Pillow==10.2.0
+opencv-python==4.9.0.80
+tabula-py==2.9.0
+
+# NLP & embeddings
+bert-score==0.3.13
+spacy==3.7.2
+sentence-transformers==2.2.2
+
+# Data handling
+pandas==2.0.1
+numpy==1.24.4
+
+# LangChain & vector stores
+langchain==0.1.14
+langchain-community==0.0.20
+faiss-cpu==1.7.3
+huggingface-hub==0.21.1
+transformers==4.39.2
+
+# Document creation
+python-docx==1.11.1
+
+# Evaluation
+scikit-learn==1.4.1
+
+# Token counting and pricing
+tiktoken==0.6.0
