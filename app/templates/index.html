@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Financial Report Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Upload Financial Documents</h1>
+        <form method="POST" enctype="multipart/form-data">
+            <input type="file" name="files" multiple accept=".pdf">
+            <button type="submit">Process Documents</button>
+        </form>
+    </div>
+</body>
+</html>
