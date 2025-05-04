@@ -7,14 +7,15 @@ $(document).ready(function() {
         $('button[type="submit"]').prop('disabled', true);
 
         $.ajax({
-            url: '/process',
+            url: '/',
             type: 'POST',
             data: formData,
             processData: false,
             contentType: false,
             success: function(response) {
-                $('#summaryPreview').html(response.summary);
-                $('#downloadFull').attr('href', `/download/${response.filename}`);
+                $('#summaryPreview').html(response.preview.replace(/\n/g, '<br>'));
+                $('#downloadOnePage').attr('href', response.downloads.one_page);
+                $('#downloadTwoPage').attr('href', response.downloads.two_page);
                 $('#summarySection').removeClass('d-none');
                 $('#evalResults').addClass('d-none');
             },
@@ -36,9 +37,9 @@ $(document).ready(function() {
             url: '/evaluate',
             type: 'GET',
             success: function(response) {
-                $('#relevancyScore').text(response.relevancy.toFixed(2));
-                $('#faithfulnessScore').text(response.faithfulness.toFixed(2));
-                $('#recallScore').text(response.recall.toFixed(2));
+                $('#relevancyScore').text((response.relevancy * 100).toFixed(1) + '%');
+                $('#faithfulnessScore').text((response.faithfulness * 100).toFixed(1) + '%');
+                $('#recallScore').text((response.recall * 100).toFixed(1) + '%');
                 $('#evalResults').removeClass('d-none');
             },
             error: function(xhr) {
