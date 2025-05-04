@@ -299,7 +299,7 @@ class SummaryGenerator:
         # Create condensed summary prompt
         condensed_prompt = PromptTemplate(
             template="""
-            You are a senior financial analyst creating a highly condensed summary of a financial report.
+            You are a financial analyst creating a highly condensed summary of a financial report.
             Using the detailed report sections below, create a executive summary that captures:
 
             1. The company's primary business and financial position

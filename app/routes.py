@@ -13,6 +13,7 @@ from app.config import Config
 from app.services.financial_processor import FinancialDocumentProcessor
 from app.services.raga_evaluator import RagaEvaluator
 from app.utils.file_handler import FileHandler
+import shutil
 
 main_bp = Blueprint('main', __name__)
 logger = logging.getLogger(__name__)
@@ -21,12 +22,45 @@ file_handler = FileHandler(
     upload_folder=Config.UPLOAD_FOLDER,
     allowed_extensions=Config.ALLOWED_EXTENSIONS
 )
-        
+def cleanup_system():
+    """Clean all working directories and pycache"""
+    try:
+        # Clean uploads directory
+        if os.path.exists(Config.UPLOAD_FOLDER):
+            shutil.rmtree(Config.UPLOAD_FOLDER)
+            os.makedirs(Config.UPLOAD_FOLDER)
+            logger.info(f"Cleaned uploads directory: {Config.UPLOAD_FOLDER}")
+
+        # Clean output directory
+        if os.path.exists(Config.OUTPUT_DIR):
+            shutil.rmtree(Config.OUTPUT_DIR)
+            os.makedirs(Config.OUTPUT_DIR)
+            logger.info(f"Cleaned output directory: {Config.OUTPUT_DIR}")
+
+        # Clean vector store
+        if os.path.exists(Config.VECTOR_STORE_DIR):
+            shutil.rmtree(Config.VECTOR_STORE_DIR)
+            os.makedirs(Config.VECTOR_STORE_DIR)
+            logger.info(f"Cleaned vector store: {Config.VECTOR_STORE_DIR}")
+
+        # Remove all __pycache__ directories
+        for root, dirs, files in os.walk(os.getcwd()):
+            for dir_name in dirs:
+                if dir_name == "__pycache__":
+                    pycache_path = os.path.join(root, dir_name)
+                    shutil.rmtree(pycache_path)
+                    logger.info(f"Removed pycache: {pycache_path}")
+
+    except Exception as e:
+        logger.error(f"Cleanup failed: {str(e)}")
+        raise       
 
 @main_bp.route('/', methods=['GET', 'POST'])
 def index():
     try:
         if request.method == 'POST':
+            cleanup_system()
+            
             files = request.files.getlist('files')
             
             if not any(f.filename != '' for f in files):
