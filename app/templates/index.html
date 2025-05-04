@@ -1,16 +1,119 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Financial Report Generator</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <h1>Upload Financial Documents</h1>
-        <form method="POST" enctype="multipart/form-data">
-            <input type="file" name="files" multiple accept=".pdf">
-            <button type="submit">Process Documents</button>
-        </form>
+    <div class="container mt-5">
+        <!-- Upload Section -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Upload Financial Documents</h3>
+            </div>
+            <div class="card-body">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <input class="form-control" type="file" name="files" multiple accept=".pdf" required>
+                    </div>
+                    <button type="submit" class="btn btn-success">
+                        <span id="uploadSpinner" class="spinner-border spinner-border-sm d-none"></span>
+                        Process Documents
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Summary Section -->
+        <div id="summarySection" class="d-none">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">Generated Summaries</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Summary Preview Box -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5>One-Page Summary Preview</h5>
+                        </div>
+                        <div class="card-body summary-preview-box">
+                            <div id="summaryPreview" class="summary-preview">
+                                {% if summary_preview %}
+                                    {{ summary_preview|safe }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Download Buttons -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <a href="{{ url_for('main.download_file', filename='one_page_summary.docx') }}" 
+                               class="btn btn-primary w-100">
+                                <i class="bi bi-file-earmark-arrow-down"></i>
+                                Download One-Page Summary
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="{{ url_for('main.download_file', filename='two_page_summary.docx') }}" 
+                               class="btn btn-secondary w-100 mt-2 mt-md-0">
+                                <i class="bi bi-file-earmark-arrow-down"></i>
+                                Download Two-Page Summary
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- RAG Evaluation Button -->
+                    <div class="text-center">
+                        <button id="runEvaluation" class="btn btn-warning">
+                            <span id="evalSpinner" class="spinner-border spinner-border-sm d-none"></span>
+                            Run RAG Evaluation
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Evaluation Results -->
+        <div id="evalResults" class="card shadow d-none">
+            <div class="card-header bg-secondary text-white">
+                <h4 class="mb-0">RAG Evaluation Metrics</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card metric-card">
+                            <div class="card-body">
+                                <h5 class="card-title">Relevancy</h5>
+                                <h2 id="relevancyScore" class="text-primary">-</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card metric-card">
+                            <div class="card-body">
+                                <h5 class="card-title">Faithfulness</h5>
+                                <h2 id="faithfulnessScore" class="text-success">-</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card metric-card">
+                            <div class="card-body">
+                                <h5 class="card-title">Recall</h5>
+                                <h2 id="recallScore" class="text-danger">-</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

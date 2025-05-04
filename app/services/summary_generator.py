@@ -390,12 +390,11 @@ class SummaryGenerator:
 
 
         else:
-            # For 1-page summary (string format)
             content_para = doc.add_paragraph(content)
-            content_para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-            content_para.space_after = Pt(6)
 
         # Save the document
         output_path = os.path.join(self.output_dir, filename)
         doc.save(output_path)
         logger.info(f"Saved document to {output_path}")
+        if not os.path.exists(output_path):
+            raise FileNotFoundError(f"Failed to create {filename}")

@@ -10,6 +10,9 @@ class Config:
     VECTOR_STORE_DIR = 'instance/vector_store'
     OUTPUT_DIR = 'instance/output'
     ALLOWED_EXTENSIONS = {'pdf'}
+    LOG_LEVEL = 'DEBUG'  
+    LOG_FILE = 'app.log'
+
 
     @classmethod
     def init_app(cls):
