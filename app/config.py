@@ -23,11 +23,3 @@ class Config:
             {"question": "Which processor powers Apple’s Vision Pro headset?", "answer": "Apple M2 along with the new Apple R1"},
             {"question": "What is Apple’s approach to intellectual property according to the 10-K?", "answer": "Apple holds a broad portfolio including patents, trademarks, copyrights, and relies on innovation and licensing as well."}
     ]
-
-
-    @classmethod
-    def init_app(cls):
-        """Create required directories"""
-        os.makedirs(cls.UPLOAD_FOLDER, exist_ok=True)
-        os.makedirs(cls.VECTOR_STORE_DIR, exist_ok=True)
-        os.makedirs(cls.OUTPUT_DIR, exist_ok=True)

@@ -86,7 +86,7 @@ def index():
                     if os.path.exists(one_page_path):
                         doc = Document(one_page_path)
                         paragraphs = [para.text.strip() for para in doc.paragraphs if para.text.strip()]
-                        preview_content = '\n\n'.join(paragraphs[:3]) or "Preview content empty"
+                        preview_content = '\n\n'.join(paragraphs) or "Preview content empty"
                         logger.info(f"Generated preview from {one_page_path}")
                 except Exception as e:
                     logger.error(f"Preview error: {str(e)}", exc_info=True)

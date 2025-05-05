@@ -7,7 +7,6 @@ from .config import Config
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
-    Config.init_app()
     
     # 1. First create all required directories
     create_required_directories(app)
