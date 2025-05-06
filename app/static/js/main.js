@@ -1,668 +1,581 @@
 $(document).ready(function() {
-    // Initialize UI components
-    initializeUI();
-    
-    // Setup event handlers
-    setupFileUploadHandlers();
-    setupFormSubmissionHandler();
-    setupEvaluationHandler();
-});
-
-/**
- * Initialize UI components and state
- */
-function initializeUI() {
-    // Add body class for animations with a slight delay for smoother page load
-    setTimeout(() => {
-        $('body').addClass('loaded');
-    }, 100);
-    
-    // Initialize tooltips if Bootstrap's tooltip is available
-    if (typeof $().tooltip === 'function') {
-        $('[data-bs-toggle="tooltip"]').tooltip();
-    }
-    
-    // Check for any messages in the URL (for redirects with messages)
-    const urlParams = new URLSearchParams(window.location.search);
-    const message = urlParams.get('message');
-    const messageType = urlParams.get('type') || 'info';
-    
-    if (message) {
-        displayMessage(message, messageType);
-    }
-    
-    // Initialize progress bar but keep it hidden
-    $('#progressContainer').hide();
-}
-
-/**
- * Set up handlers for file upload interactions with enhanced feedback
- */
-function setupFileUploadHandlers() {
+    // File upload handling
     const dropZone = $('#dropZone');
     const fileInput = $('#fileInput');
     const selectedFiles = $('#selectedFiles');
     
-    // Drag and drop functionality with enhanced visual feedback
+    // Drag and drop functionality with enhanced feedback
     dropZone.on('dragover', function(e) {
         e.preventDefault();
-        e.stopPropagation();
         $(this).addClass('dragover');
     });
     
-    dropZone.on('dragleave', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
+    dropZone.on('dragleave', function() {
         $(this).removeClass('dragover');
     });
     
     dropZone.on('drop', function(e) {
         e.preventDefault();
-        e.stopPropagation();
-        $(this).removeClass('dragover').addClass('drop-success');
-        
+        $(this).removeClass('dragover');
         const files = e.originalEvent.dataTransfer.files;
         fileInput.prop('files', files);
         updateFileList(files);
-        
-        // Visual feedback for successful drop
-        pulseElement($(this));
-        
-        // Remove success class after animation
-        setTimeout(() => {
-            $(this).removeClass('drop-success');
-        }, 1500);
     });
     
-    // Handle file input change with visual feedback
     fileInput.on('change', function() {
-        dropZone.addClass('drop-success');
         updateFileList(this.files);
-        pulseElement(dropZone);
-        
-        // Remove success class after animation
-        setTimeout(() => {
-            dropZone.removeClass('drop-success');
-        }, 1500);
     });
     
-    // Handle click on drop zone
-    dropZone.on('click', function(e) {
-        if (e.target === this || !$(e.target).closest('.file-badge').length) {
-            fileInput.trigger('click');
-        }
-    });
-    
-    // Enable file removal
-    $(document).on('click', '.file-badge .remove-file', function(e) {
-        e.stopPropagation();
-        
-        // Get the file index
-        const index = $(this).data('index');
-        
-        // Create a new FileList without the removed file
-        const dt = new DataTransfer();
-        const files = fileInput[0].files;
-        
-        for (let i = 0; i < files.length; i++) {
-            if (i !== index) {
-                dt.items.add(files[i]);
-            }
-        }
-        
-        // Update the file input
-        fileInput[0].files = dt.files;
-        
-        // Update the file list display
-        updateFileList(fileInput[0].files);
-        
-        // Show feedback
-        if (fileInput[0].files.length === 0) {
-            dropZone.removeClass('drop-success');
-        }
-    });
-}
-
-/**
- * Update the file list display with selected files and enhanced animations
- * @param {FileList} files - The list of selected files
- */
-function updateFileList(files) {
-    const selectedFiles = $('#selectedFiles');
-    
-    // Fade out existing files before replacing them
-    selectedFiles.children().fadeOut(300, function() {
+    function updateFileList(files) {
         selectedFiles.empty();
-        
         if (files.length > 0) {
-            // Add fade-in animation class
-            selectedFiles.addClass('fade-in');
-            
-            // Create and append file badges with staggered animation
             for (let i = 0; i < files.length; i++) {
-                const fileExt = files[i].name.split('.').pop().toLowerCase();
-                let iconClass = 'bi-file-earmark';
-                
-                // Set icon based on file type
-                if (fileExt === 'pdf') {
-                    iconClass = 'bi-file-earmark-pdf';
-                } else if (['doc', 'docx'].includes(fileExt)) {
-                    iconClass = 'bi-file-earmark-word';
-                } else if (['xls', 'xlsx'].includes(fileExt)) {
-                    iconClass = 'bi-file-earmark-excel';
-                }
-                
-                // Format file size
-                const fileSize = formatFileSize(files[i].size);
-                
-                // Create file badge with remove button
-                const fileBadge = $(`
-                    <div class="file-badge" style="opacity: 0;">
-                        <i class="bi ${iconClass}"></i> 
-                        ${truncateText(files[i].name, 20)}
-                        <span class="ms-1 text-black-50">(${fileSize})</span>
-                        <button type="button" class="remove-file" data-index="${i}" title="Remove file">
-                            <i class="bi bi-x-circle"></i>
-                        </button>
-                    </div>
-                `);
-                
-                selectedFiles.append(fileBadge);
-                
-                // Staggered fade-in animation
-                setTimeout(() => {
-                    fileBadge.animate({ opacity: 1 }, 300);
-                }, i * 100);
+                selectedFiles.append(
+                    `<div class="file-badge">
+                        <i class="bi bi-file-earmark-pdf"></i> ${files[i].name}
+                    </div>`
+                );
             }
             
-            // Enable the process button with animation if files are selected
-            $('.btn-process').prop('disabled', false).addClass('btn-pulse');
-            setTimeout(() => {
-                $('.btn-process').removeClass('btn-pulse');
-            }, 1000);
-        } else {
-            // Disable the process button if no files are selected
-            $('.btn-process').prop('disabled', true);
+            // Add subtle animation to show files are selected
+            selectedFiles.hide().fadeIn(300);
         }
-    });
-}
-
-/**
- * Handle form submission for document processing with progress tracking
- */
-function setupFormSubmissionHandler() {
+    }
     $('#uploadForm').submit(function(e) {
         e.preventDefault();
-        
-        // Get form data
         const formData = new FormData(this);
         
-        // Show loading state
+        // UI Initial State
+        const $submitBtn = $('button[type="submit"]');
+        $submitBtn.prop('disabled', true).addClass('processing');
+        $('#processingProgress').removeClass('d-none').hide().fadeIn(300);
         $('#uploadSpinner').removeClass('d-none');
-        $('button[type="submit"]').prop('disabled', true);
+    
+        // Progress Tracking Setup - Enhanced with more checkpoints for realism
+        let progress = 0;
+        const progressMessages = [
+            { percent: 5, message: "Initializing upload process..." },
+            { percent: 10, message: "Reading document structure..." },
+            { percent: 15, message: "Uploading document data..." },
+            { percent: 20, message: "Verifying document integrity..." },
+            { percent: 25, message: "Preparing financial analysis..." },
+            { percent: 30, message: "Analyzing document metadata..." },
+            { percent: 35, message: "Processing financial statements..." },
+            { percent: 45, message: "Identifying key metrics..." },
+            { percent: 55, message: "Extracting financial insights..." },
+            { percent: 65, message: "Generating visualizations..." },
+            { percent: 70, message: "Comparing with industry standards..." },
+            { percent: 75, message: "Creating executive summary..." },
+            { percent: 80, message: "Formatting report sections..." },
+            { percent: 85, message: "Finalizing document formatting..." },
+            { percent: 90, message: "Preparing download options..." },
+            { percent: 95, message: "Optimizing output quality..." }
+        ];
         
-        // Show progress container
-        $('#progressContainer').fadeIn(300);
-        $('#progressBar').css('width', '0%').attr('aria-valuenow', 0).text('0%');
+        // Processing details for more realistic feedback
+        const processingDetails = [
+            "Parsing balance sheet data...",
+            "Analyzing cash flow statements...",
+            "Processing income statements...",
+            "Calculating financial ratios...",
+            "Identifying revenue trends...",
+            "Validating quarterly comparisons...",
+            "Generating YoY growth analysis...",
+            "Applying industry benchmarks...",
+            "Extracting key performance indicators...",
+            "Implementing risk assessment models..."
+        ];
         
-        // Show processing message
-        displayMessage('Processing documents. This may take a moment...', 'info', false);
-
-        // Simulate progress with realistic stages
-        simulateDocumentProcessingProgress();
-
-        // Make AJAX request
+        // Create a more natural progress simulation
+        // Total execution time target: ~70 seconds
+        const totalTime = 70000; // 70 seconds in ms
+        const microUpdateInterval = 200; // Small updates every 200ms
+        
+        // Track when the last major update occurred
+        let lastMajorUpdate = 0;
+        let currentMessageIndex = 0;
+        let processingDetailsIndex = 0;
+        
+        // Update the progress in small increments for smooth animation
+        const microProgressInterval = setInterval(() => {
+            // Only do micro updates when we're not at a major checkpoint
+            if (currentMessageIndex < progressMessages.length) {
+                const targetPercent = progressMessages[currentMessageIndex].percent;
+                
+                // Small random increment (0.1% to 0.5%)
+                const randomIncrement = Math.random() * 0.4 + 0.1;
+                
+                // Don't exceed the next major checkpoint
+                if (progress + randomIncrement < targetPercent) {
+                    progress += randomIncrement;
+                    updateProgress(progress, progressMessages[currentMessageIndex].message);
+                    
+                    // Update circular progress
+                    updateCircularProgress(progress);
+                    
+                    // Occasionally show processing details for realism
+                    if (Math.random() < 0.15) { // 15% chance on each micro-update
+                        showProcessingDetail(processingDetails[processingDetailsIndex]);
+                        processingDetailsIndex = (processingDetailsIndex + 1) % processingDetails.length;
+                    }
+                }
+            }
+        }, microUpdateInterval);
+        
+        // Progress Major Update Function - less frequent, more significant jumps
+        const majorProgressInterval = setInterval(() => {
+            if (currentMessageIndex < progressMessages.length) {
+                progress = progressMessages[currentMessageIndex].percent;
+                updateProgress(progress, progressMessages[currentMessageIndex].message);
+                updateCircularProgress(progress);
+                
+                // Apply pulse animation on major updates
+                $('.progress-pulse').addClass('pulse-animation');
+                setTimeout(() => {
+                    $('.progress-pulse').removeClass('pulse-animation');
+                }, 800);
+                
+                currentMessageIndex++;
+                
+                // Show a processing detail with each major step
+                showProcessingDetail(processingDetails[processingDetailsIndex]);
+                processingDetailsIndex = (processingDetailsIndex + 1) % processingDetails.length;
+            }
+        }, totalTime / progressMessages.length);
+    
+        // Progress Update Function
+        const updateProgress = (percent, message) => {
+            $('.progress-bar')
+                .css('width', percent + '%')
+                .attr('aria-valuenow', percent)
+                .removeClass('bg-danger');
+            $('.progress-message').html(`
+                <i class="bi bi-arrow-repeat spin"></i> ${message}
+                <span class="progress-percent">${Math.round(percent)}%</span>
+            `);
+        };
+        
+        // Circular Progress Update
+        const updateCircularProgress = (percent) => {
+            const circle = $('.progress-circle-path')[0];
+            const radius = circle.r.baseVal.value;
+            const circumference = radius * 2 * Math.PI;
+            
+            const offset = circumference - (percent / 100) * circumference;
+            circle.style.strokeDasharray = `${circumference} ${circumference}`;
+            circle.style.strokeDashoffset = offset;
+            
+            $('.progress-circle-text').text(`${Math.round(percent)}%`);
+        };
+        
+        // Show processing detail with fade effect
+        const showProcessingDetail = (detail) => {
+            $('.progress-detail').fadeOut(200, function() {
+                $(this).html(`<i class="bi bi-cpu"></i> ${detail}`).fadeIn(200);
+                
+                // Auto-hide after a few seconds
+                setTimeout(() => {
+                    $(this).fadeOut(200);
+                }, 2000);
+            });
+        };
+    
+        // AJAX Request
         $.ajax({
             url: '/',
             type: 'POST',
             data: formData,
             processData: false,
             contentType: false,
-            xhr: function() {
-                const xhr = new window.XMLHttpRequest();
+            success: (response) => {
+                clearInterval(microProgressInterval);
+                clearInterval(majorProgressInterval);
                 
-                // Upload progress
-                xhr.upload.addEventListener('progress', function(evt) {
-                    if (evt.lengthComputable) {
-                        const percentComplete = Math.round((evt.loaded / evt.total) * 30);
-                        updateProgressBar(percentComplete, 'Uploading files...');
-                    }
-                }, false);
-                
-                return xhr;
-            },
-            success: function(response) {
-                // Complete the progress bar
-                updateProgressBar(100, 'Complete!');
-                
-                // Clear any messages
-                clearMessages();
-                
-                // Prepare summary content
-                const formattedSummary = response.preview.replace(/\n/g, '<br>');
-                
-                // First hide old content if visible
-                if ($('#summarySection').is(':visible')) {
-                    $('#summarySection').fadeOut(300, function() {
-                        $('#summaryPreview').html(formattedSummary);
-                        // Then show with animation
-                        $(this).fadeIn(500).addClass('highlight-section');
+                // Ensure we reach 100% smoothly
+                const completeProgress = () => {
+                    let currentPercent = parseFloat($('.progress-bar').attr('aria-valuenow'));
+                    
+                    if (currentPercent < 100) {
+                        // Create a smooth transition to 100%
+                        const remainingSteps = Math.ceil((100 - currentPercent) / 2);
+                        let step = 0;
+                        
+                        const finalInterval = setInterval(() => {
+                            step++;
+                            currentPercent = Math.min(100, currentPercent + 2);
+                            
+                            if (step === remainingSteps / 2) {
+                                updateProgress(currentPercent, "Preparing final documents...");
+                            }
+                            
+                            if (step >= remainingSteps || currentPercent >= 100) {
+                                clearInterval(finalInterval);
+                                updateProgress(100, "Processing complete!");
+                                updateCircularProgress(100);
+                                
+                                // Show success checkmark
+                                setTimeout(() => {
+                                    $('.progress-circle-text').fadeOut(300, function() {
+                                        $(this).addClass('d-none');
+                                        $('.checkmark').removeClass('d-none').hide().fadeIn(300);
+                                    });
+                                }, 500);
+                                
+                                // UI Transition
+                                setTimeout(() => {
+                                    $('#processingProgress').fadeOut(400, () => {
+                                        $submitBtn.prop('disabled', false).removeClass('processing');
+                                    });
+                    
+                                    // Update stepper states
+                                    $('#uploadStep, #processStep').addClass('completed');
+                                    $('#summaryStep').addClass('active').removeClass('completed');
+                    
+                                    // Handle summary preview
+                                    const summaryText = response.preview.replace(/\n/g, '<br>');
+                                    const summaryPreview = $('#summaryPreview');
+                                    summaryPreview.empty().hide();
+                    
+                                    // Enhanced typing effect with variable speed
+                                    let i = 0;
+                                    const chunkSize = Math.max(50, Math.floor(summaryText.length / 25));
+                                    let baseSpeed = Math.max(5, Math.min(40, 1800 / summaryText.length));
+                    
+                                    const typeWriter = () => {
+                                        if (i < summaryText.length) {
+                                            const end = Math.min(i + chunkSize, summaryText.length);
+                                            summaryPreview.html(summaryText.substring(0, end));
+                                            i = end;
+                                            
+                                            // Variable typing speed for realism
+                                            const variableSpeed = baseSpeed * (0.7 + Math.random() * 0.6);
+                                            
+                                            // Occasional pause at punctuation
+                                            const lastChar = summaryText.charAt(end-1);
+                                            const delay = ['.', '!', '?', ':'].includes(lastChar) ? 
+                                                variableSpeed * 4 : variableSpeed;
+                                                
+                                            setTimeout(typeWriter, delay);
+                                        } else {
+                                            summaryPreview.fadeIn(300);
+                                        }
+                                    };
+                    
+                                    $('#summarySection').removeClass('d-none').hide().fadeIn(800, () => {
+                                        typeWriter();
+                                        $('html, body').animate({
+                                            scrollTop: $('#summarySection').offset().top - 20
+                                        }, 1000);
+                                    });
+                                }, 1500);
+                            } else {
+                                updateProgress(currentPercent, "Finalizing output...");
+                                updateCircularProgress(currentPercent);
+                            }
+                        }, 100);
+                    } else {
+                        // Already at 100%, proceed directly
+                        updateProgress(100, "Processing complete!");
                         setTimeout(() => {
-                            $(this).removeClass('highlight-section');
-                        }, 1500);
-                    });
-                } else {
-                    // Direct show if not visible
-                    $('#summaryPreview').html(formattedSummary);
-                    $('#summarySection').removeClass('d-none').hide().fadeIn(500).addClass('highlight-section');
+                            // UI Transition
+                            $('#processingProgress').fadeOut(400, () => {
+                                $submitBtn.prop('disabled', false).removeClass('processing');
+                            });
+                
+                            // Further transitions as in original code
+                            // ...
+                        }, 1000);
+                    }
+                };
+                
+                completeProgress();
+            },
+            error: (xhr) => {
+                clearInterval(microProgressInterval);
+                clearInterval(majorProgressInterval);
+                
+                // Enhanced error handling with more dramatic visual feedback
+                const errorAnimation = () => {
+                    // Shake animation
+                    $('#processingProgress').addClass('shake-animation');
+                    
+                    // Red flash effect
+                    $('.progress-pulse').css('background', 'rgba(220, 53, 69, 0.1)').addClass('pulse-animation');
+                    
+                    // Progress bar visuals
+                    $('.progress-bar')
+                        .css('width', '100%')
+                        .addClass('bg-danger')
+                        .removeClass('progress-bar-striped progress-bar-animated');
+                    
+                    // Error message
+                    updateProgress(0, "Processing failed - Please try again");
+                    
+                    // Circular progress error state
+                    $('.progress-circle-path').css('stroke', '#dc3545');
+                    $('.progress-circle-text').text('Error').css('color', '#dc3545');
+                    
+                    // Error detail message
+                    showProcessingDetail("An error occurred during document processing");
+                    
                     setTimeout(() => {
-                        $('#summarySection').removeClass('highlight-section');
-                    }, 1500);
-                }
+                        $('#processingProgress').removeClass('shake-animation');
+                        $('.progress-pulse').removeClass('pulse-animation');
+                    }, 1000);
+                };
                 
-                // Hide evaluation results
-                $('#evalResults').addClass('d-none');
-                
-                // Success message
-                displayMessage('Documents processed successfully!', 'success');
-                
-                // Smooth scroll to summary section
-                smoothScrollTo('#summarySection');
-            },
-            error: function(xhr) {
-                // Reset progress bar to show error
-                $('#progressBar')
-                    .removeClass('bg-info bg-success')
-                    .addClass('bg-danger')
-                    .css('width', '100%')
-                    .text('Error');
-                
-                // Get error message
-                const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : 'Unknown error occurred';
-                
-                // Show error message with details
-                displayMessage(`Error processing documents: ${errorMsg}`, 'danger');
-                
-                // Add retry button
-                addRetryButton();
-            },
-            complete: function() {
-                // Hide progress bar after delay
+                errorAnimation();
+    
+                // Error handling
+                const errorMsg = xhr.responseJSON?.error || 'Server processing error';
+                const $errorAlert = $(`
+                    <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                        <i class="bi bi-x-circle-fill me-2"></i>
+                        ${errorMsg}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `);
+    
+                // UI Reset
                 setTimeout(() => {
-                    $('#progressContainer').fadeOut(500);
-                }, 1500);
-                
-                // Reset loading state
+                    $('#processingProgress').fadeOut(400);
+                    $submitBtn.prop('disabled', false).removeClass('processing');
+                    $('#uploadStep').removeClass('completed');
+                    $('#processStep, #summaryStep').removeClass('active completed');
+                    $errorAlert.insertAfter('#uploadForm').hide().slideDown();
+                }, 2000);
+            },
+            complete: () => {
                 $('#uploadSpinner').addClass('d-none');
-                $('button[type="submit"]').prop('disabled', false);
             }
         });
     });
-}
 
-/**
- * Simulate realistic document processing progress
- */
-function simulateDocumentProcessingProgress() {
-    const stages = [
-        { progress: 30, message: 'Uploading files...', duration: 1000 },
-        { progress: 40, message: 'Extracting text...', duration: 1500 },
-        { progress: 60, message: 'Analyzing content...', duration: 2000 },
-        { progress: 80, message: 'Generating summary...', duration: 1500 },
-        { progress: 90, message: 'Finalizing...', duration: 1000 }
-    ];
-    
-    let currentStage = 0;
-    
-    function processNextStage() {
-        if (currentStage < stages.length) {
-            const stage = stages[currentStage];
-            updateProgressBar(stage.progress, stage.message);
-            
-            currentStage++;
-            setTimeout(processNextStage, stage.duration);
-        }
-    }
-    
-    processNextStage();
-}
-
-/**
- * Update the progress bar with animation
- * @param {number} progress - The progress percentage (0-100)
- * @param {string} message - The progress message to display
- */
-function updateProgressBar(progress, message) {
-    const progressBar = $('#progressBar');
-    
-    // Change color based on progress
-    if (progress < 30) {
-        progressBar.removeClass('bg-success bg-warning').addClass('bg-info');
-    } else if (progress < 70) {
-        progressBar.removeClass('bg-info bg-success').addClass('bg-warning');
-    } else {
-        progressBar.removeClass('bg-info bg-warning').addClass('bg-success');
-    }
-    
-    // Update progress text
-    $('#progressStatus').text(message);
-    
-    // Animate progress bar
-    progressBar.animate(
-        { width: progress + '%' },
-        {
-            duration: 300,
-            easing: 'swing',
-            step: function(now) {
-                const value = Math.round(now);
-                $(this).attr('aria-valuenow', value).text(value + '%');
-            }
-        }
-    );
-}
-
-/**
- * Add a retry button for error recovery
- */
-function addRetryButton() {
-    const retryBtn = $(`
-        <button id="retryBtn" class="btn btn-outline-danger mt-3">
-            <i class="bi bi-arrow-repeat me-2"></i>Retry Upload
-        </button>
-    `);
-    
-    $('#progressContainer').after(retryBtn);
-    
-    // Add pulse animation
-    retryBtn.addClass('btn-pulse');
-    
-    // Handle retry click
-    retryBtn.on('click', function() {
-        $(this).remove();
-        $('#progressBar')
-            .removeClass('bg-danger')
-            .addClass('bg-info')
-            .css('width', '0%')
-            .text('0%');
-        $('#progressContainer').fadeOut(300);
-        $('#uploadForm').trigger('submit');
-    });
-}
-
-/**
- * Handle evaluation button click with enhanced animations
- */
-function setupEvaluationHandler() {
+    // Evaluation with enhanced UX
     $('#runEvaluation').click(function() {
-        // Show loading state
+        // Update stepper
+        $('#summaryStep').addClass('completed');
+        $('#evaluateStep').addClass('active');
+        
         $('#evalSpinner').removeClass('d-none');
         $(this).prop('disabled', true);
-        
-        // Show processing message
-        displayMessage('Running RAG evaluation...', 'info', false);
 
-        // Make AJAX request
+        // Add pulsing effect to the evaluation card
+        $('.eval-card').addClass('pulse-light');
+
         $.ajax({
             url: '/evaluate',
             type: 'GET',
             success: function(response) {
-                // Clear any messages
-                clearMessages();
-                
-                // Reset metric values first
-                $('#relevancyScore, #faithfulnessScore, #recallScore').text('0.0%');
-                
-                // Show evaluation section with animation
-                if ($('#evalResults').is(':visible')) {
-                    $('#evalResults').fadeOut(300, function() {
-                        $(this).fadeIn(500).addClass('highlight-section');
-                        setTimeout(() => {
-                            $(this).removeClass('highlight-section');
-                        }, 1500);
-                    });
-                } else {
-                    $('#evalResults').removeClass('d-none').hide().fadeIn(500).addClass('highlight-section');
-                    setTimeout(() => {
-                        $('#evalResults').removeClass('highlight-section');
-                    }, 1500);
-                }
-                
-                // Format and set scores with enhanced animation
-                setTimeout(() => {
-                    animateMetricWithGauge('relevancyScore', response.relevancy);
-                    
-                    setTimeout(() => {
-                        animateMetricWithGauge('faithfulnessScore', response.faithfulness);
+                // Enhanced progress effect before showing results
+                let evalProgress = 0;
+                const evalInterval = setInterval(() => {
+                    evalProgress += 5;
+                    if (evalProgress <= 100) {
+                        // Show progress message while evaluating
+                        if (evalProgress === 20) {
+                            showEvalMessage("Comparing summaries with source documents...");
+                        } else if (evalProgress === 40) {
+                            showEvalMessage("Measuring content relevance...");
+                        } else if (evalProgress === 60) {
+                            showEvalMessage("Calculating factual accuracy...");
+                        } else if (evalProgress === 80) {
+                            showEvalMessage("Finalizing evaluation metrics...");
+                        }
+                    } else {
+                        clearInterval(evalInterval);
+                        $('.eval-message').fadeOut(300, function() {
+                            $(this).remove();
+                        });
                         
+                        // Remove the pulsing effect
+                        $('.eval-card').removeClass('pulse-light');
+                        
+                        // Reset displayed values to ensure animation works
+                        $('#relevancyScore').text('0.0%');
+                        $('#faithfulnessScore').text('0.0%');
+                        $('#recallScore').text('0.0%');
+                        
+                        // Show evaluation results section with a fade effect
+                        $('#evalResults').hide().removeClass('d-none').fadeIn(500);
+                        
+                        // Store actual values
+                        const relevancy = (response.relevancy * 100).toFixed(1);
+                        const faithfulness = (response.faithfulness * 100).toFixed(1);
+                        const recall = (response.recall * 100).toFixed(1);
+                        
+                        // Pulse effect on the metrics container
+                        $('.metrics-container').addClass('pulse-light');
                         setTimeout(() => {
-                            animateMetricWithGauge('recallScore', response.recall);
+                            $('.metrics-container').removeClass('pulse-light');
+                        }, 1000);
+                        
+                        // Delayed animation start for better UX
+                        setTimeout(function() {
+                            animateNumbers('#relevancyScore', relevancy);
+                            
+                            // Stagger animations for better visual effect
+                            setTimeout(function() {
+                                animateNumbers('#faithfulnessScore', faithfulness);
+                            }, 400);
+                            
+                            setTimeout(function() {
+                                animateNumbers('#recallScore', recall);
+                            }, 800);
                         }, 400);
-                    }, 400);
-                }, 400);
-                
-                // Success message
-                displayMessage('Evaluation completed successfully!', 'success');
+                    }
+                }, 100);
                 
                 // Smooth scroll to evaluation section
-                smoothScrollTo('#evalResults');
-            },
-            error: function(xhr) {
-                // Get error message
-                const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : 'Unknown error occurred';
-                
-                // Show error message with more details
-                displayMessage(`Evaluation failed: ${errorMsg}. Please try again or contact support if the issue persists.`, 'danger');
-                
-                // Shake the evaluation button to indicate error
-                $('#runEvaluation').addClass('shake-animation');
-                setTimeout(() => {
-                    $('#runEvaluation').removeClass('shake-animation');
+                $('html, body').animate({
+                    scrollTop: $('#evalResults').offset().top - 20
                 }, 800);
             },
+            error: function(xhr) {
+                // Reset stepper state
+                $('#evaluateStep').removeClass('active');
+                
+                const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : 'Unknown error occurred';
+                
+                // Show elegant error message with animation
+                $('<div class="alert alert-danger mt-3 d-flex align-items-center" role="alert">')
+                    .html(`
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <div>Evaluation failed: ${errorMsg}</div>
+                    `)
+                    .hide()
+                    .insertAfter('#runEvaluation')
+                    .slideDown(300)
+                    .delay(5000)
+                    .fadeOut(500, function() { $(this).remove(); });
+            },
             complete: function() {
-                // Reset loading state
                 $('#evalSpinner').addClass('d-none');
                 $('#runEvaluation').prop('disabled', false);
             }
         });
-    });
-}
-
-/**
- * Animate counting up to a metric value with visual gauge feedback
- * @param {string} elementId - The ID of the element to animate
- * @param {number} finalValue - The final value to count to (0-1)
- */
-function animateMetricWithGauge(elementId, finalValue) {
-    const element = $(`#${elementId}`);
-    const percentValue = finalValue * 100;
-    const duration = 1500;
-    const frameDuration = 20;
-    const frames = duration / frameDuration;
-    const increment = percentValue / frames;
-    
-    let currentValue = 0;
-    
-    // Add gauge container if it doesn't exist
-    const gaugeId = `${elementId}Gauge`;
-    if ($(`#${gaugeId}`).length === 0) {
-        element.after(`
-            <div id="${gaugeId}" class="metric-gauge">
-                <div class="gauge-fill"></div>
-            </div>
-        `);
-    }
-    
-    const gaugeElement = $(`#${gaugeId} .gauge-fill`);
-    gaugeElement.css('width', '0%');
-    
-    // Set color based on value
-    let gaugeColor;
-    if (percentValue < 50) {
-        gaugeColor = '#dc3545'; // danger
-    } else if (percentValue < 75) {
-        gaugeColor = '#ffc107'; // warning
-    } else {
-        gaugeColor = '#28a745'; // success
-    }
-    gaugeElement.css('background-color', gaugeColor);
-    
-    // Start animation
-    const interval = setInterval(() => {
-        currentValue += increment;
-        if (currentValue >= percentValue) {
-            currentValue = percentValue;
-            clearInterval(interval);
-            
-            // Add pulse animation to final value
-            element.addClass('pulse-value');
-            setTimeout(() => {
-                element.removeClass('pulse-value');
-            }, 1000);
-        }
         
-        // Update text and gauge
-        element.text(`${currentValue.toFixed(1)}%`);
-        gaugeElement.css('width', `${currentValue}%`);
-    }, frameDuration);
-}
-
-/**
- * Display a message to the user with enhanced animations
- * @param {string} message - The message to display
- * @param {string} type - The type of message (success, info, warning, danger)
- * @param {boolean} autoHide - Whether to auto-hide the message
- */
-function displayMessage(message, type = 'info', autoHide = true) {
-    // Clear any existing messages
-    clearMessages();
-    
-    // Get the appropriate icon for the message type
-    let iconClass = 'bi-info-circle-fill';
-    if (type === 'success') iconClass = 'bi-check-circle-fill';
-    if (type === 'warning') iconClass = 'bi-exclamation-triangle-fill';
-    if (type === 'danger') iconClass = 'bi-exclamation-circle-fill';
-    
-    // Create message element
-    const messageElement = $(`
-        <div class="alert alert-${type} d-flex align-items-center" role="alert" style="opacity: 0; transform: translateY(-20px);">
-            <i class="bi ${iconClass} me-2"></i>
-            <div>${message}</div>
-            ${type === 'danger' ? '<button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>' : ''}
-        </div>
-    `);
-    
-    // Add message to the top of the form
-    $('#uploadForm').prepend(messageElement);
-    
-    // Animate message in
-    messageElement.animate(
-        { opacity: 1, transform: 'translateY(0)' },
-        {
-            duration: 300,
-            easing: 'easeOutCubic'
+        // Helper function to show eval messages
+        function showEvalMessage(message) {
+            // Remove existing message if it exists
+            $('.eval-message').remove();
+            
+            // Create new message
+            $('<div class="eval-message text-center mb-4">')
+                .html(`<div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>${message}`)
+                .hide()
+                .insertBefore('#evalResults')
+                .fadeIn(300);
         }
-    );
+    });
     
-    // Auto-hide message after delay if enabled
-    if (autoHide) {
-        setTimeout(() => {
-            messageElement.animate(
-                { opacity: 0, transform: 'translateY(-20px)' },
-                {
-                    duration: 300,
-                    easing: 'easeInCubic',
-                    complete: function() {
-                        $(this).remove();
-                    }
+    // Enhanced number animation function for metrics
+    function animateNumbers(selector, targetValue) {
+        const $element = $(selector);
+        const duration = 2200;  // Extended for more dramatic effect
+        const frameDuration = 1000/60;
+        const totalFrames = Math.round(duration / frameDuration);
+        
+        // Enhanced easing function for more realistic animation
+        const easeOutElastic = (t) => {
+            const p = 0.3;
+            return Math.pow(2, -10 * t) * Math.sin((t - p / 4) * (2 * Math.PI) / p) + 1;
+        };
+        
+        let frame = 0;
+        const countTo = parseFloat(targetValue);
+        
+        // Start from 0 always for cleaner animation
+        let count = 0;
+        
+        const animate = () => {
+            frame++;
+            const progress = frame / totalFrames;
+            const easedProgress = easeOutElastic(progress);
+            const currentCount = countTo * Math.min(easedProgress, 1);
+            
+            // Format with 1 decimal place, and add thousandth separators for large numbers
+            $element.text(currentCount.toFixed(1) + '%');
+            
+            // Add color fade effect based on the value
+            if (currentCount > 0) {
+                // Determine color based on value range
+                let hue;
+                if (selector === '#relevancyScore') {
+                    hue = Math.min(120, Math.max(0, currentCount * 1.2));
+                } else if (selector === '#faithfulnessScore') {
+                    hue = Math.min(120, Math.max(0, currentCount * 1.2));
+                } else {
+                    hue = Math.min(120, Math.max(0, currentCount * 1.2));
                 }
-            );
-        }, 5000);
-    }
-}
-
-/**
- * Clear all displayed messages with animation
- */
-function clearMessages() {
-    $('.alert').each(function() {
-        $(this).animate(
-            { opacity: 0, transform: 'translateY(-20px)' },
-            {
-                duration: 300,
-                easing: 'easeInCubic',
-                complete: function() {
-                    $(this).remove();
-                }
+                
+                // Apply gradient effect
+                $element.css({
+                    'background': `linear-gradient(135deg, hsl(${hue}, 80%, 40%) 0%, hsl(${hue}, 70%, 30%) 100%)`,
+                    '-webkit-background-clip': 'text',
+                    '-webkit-text-fill-color': 'transparent',
+                    'background-clip': 'text'
+                });
             }
-        );
-    });
-}
-
-/**
- * Apply a pulse animation to an element
- * @param {jQuery} element - The element to pulse
- */
-function pulseElement(element) {
-    element.removeClass('pulse').addClass('pulse');
-    setTimeout(() => {
-        element.removeClass('pulse');
-    }, 1500);
-}
-
-/**
- * Smooth scroll to an element with enhanced animation
- * @param {string} selector - The selector for the element to scroll to
- */
-function smoothScrollTo(selector) {
-    $('html, body').animate({
-        scrollTop: $(selector).offset().top - 20
-    }, {
-        duration: 800,
-        easing: 'easeInOutCubic'
-    });
-}
-
-/**
- * Format a file size in bytes to a human-readable format
- * @param {number} bytes - The file size in bytes
- * @returns {string} - The formatted file size
- */
-function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
+            
+            if (frame < totalFrames) {
+                requestAnimationFrame(animate);
+            } else {
+                $element.text(countTo.toFixed(1) + '%');
+                
+                // Scale animation on completion
+                $element.parent().addClass('pulse-complete');
+                setTimeout(() => {
+                    $element.parent().removeClass('pulse-complete');
+                }, 500);
+            }
+        };
+        
+        requestAnimationFrame(animate);
+    }
     
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-/**
- * Truncate text with ellipsis if it exceeds max length
- * @param {string} text - The text to truncate
- * @param {number} maxLength - The maximum length
- * @returns {string} - The truncated text
- */
-function truncateText(text, maxLength) {
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength - 3) + '...';
-}
-
-/**
- * Add jQuery easing functions if not available
- */
-if (typeof $.easing.easeInOutCubic !== 'function') {
-    $.extend($.easing, {
-        easeInCubic: function(x, t, b, c, d) {
-            return c * (t /= d) * t * t + b;
-        },
-        easeOutCubic: function(x, t, b, c, d) {
-            return c * ((t = t / d - 1) * t * t + 1) + b;
-        },
-        easeInOutCubic: function(x, t, b, c, d) {
-            if ((t /= d / 2) < 1) return c / 2 * t * t * t + b;
-            return c / 2 * ((t -= 2) * t * t + 2) + b;
-        }
-    });
-}
+    // Add CSS for new animations
+    $('<style>')
+        .text(`
+            @keyframes shake-animation {
+                0% { transform: translateX(0); }
+                10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                20%, 40%, 60%, 80% { transform: translateX(5px); }
+                100% { transform: translateX(0); }
+            }
+            
+            .shake-animation {
+                animation: shake-animation 0.8s cubic-bezier(.36,.07,.19,.97) both;
+            }
+            
+            @keyframes pulse-light {
+                0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
+                70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+                100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+            }
+            
+            .pulse-light {
+                animation: pulse-light 1.5s ease-out infinite;
+            }
+            
+            @keyframes pulse-complete {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+                100% { transform: scale(1); }
+            }
+            
+            .pulse-complete {
+                animation: pulse-complete 0.5s ease-out;
+            }
+            
+            .eval-message {
+                padding: 1rem;
+                background-color: rgba(59, 130, 246, 0.05);
+                border-radius: 12px;
+                border-left: 3px solid var(--primary-color);
+                font-weight: 500;
+                color: var(--primary-dark);
+            }
+        `)
+        .appendTo('head');
+});

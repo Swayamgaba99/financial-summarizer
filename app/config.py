@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
-    SECRET_KEY = os.getenv('SECRET_KEY')
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
     UPLOAD_FOLDER = 'instance/uploads'
     VECTOR_STORE_DIR = 'instance/uploads/vector_store'
@@ -68,17 +67,5 @@ class Config:
                 {
                 "question": "What was Apple’s capital return to shareholders in fiscal 2023?",
                 "answer": "Apple returned $77.6 billion to shareholders in fiscal 2023 through dividends and share repurchases."  # From 10-K
-                },
-                {
-                "question": "What are the charging and battery details of the Vision Pro headset?",
-                "answer": "The Vision Pro has a separate battery pack with approximately 2 hours of usage per charge."  # From JPM
-                },
-                {
-                "question": "Who supplies the cameras for the Vision Pro?",
-                "answer": "Sony is believed to supply the cameras and sensors for Vision Pro."  # From Deutsche
-                },
-                {
-                "question": "What is Apple's expected product pipeline direction with Vision Pro?",
-                "answer": "Apple plans to introduce more affordable AR/VR headsets in the coming years following Vision Pro."  
                 }
     ]

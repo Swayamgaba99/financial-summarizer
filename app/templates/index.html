@@ -68,6 +68,51 @@
                 </form>
             </div>
         </div>
+        
+        <div id="processingProgress" class="d-none">
+            <div class="progress-pulse"></div>
+            
+            <!-- Circular Progress Indicator -->
+            <div class="progress-circle-container">
+                <svg class="progress-circle" viewBox="0 0 100 100">
+                    <circle class="progress-circle-bg" cx="50" cy="50" r="46"></circle>
+                    <circle class="progress-circle-path" cx="50" cy="50" r="46"></circle>
+                </svg>
+                <div class="progress-circle-text">0%</div>
+                
+                <!-- Success checkmark (hidden initially) -->
+                <svg class="checkmark d-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                    <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                    <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                </svg>
+            </div>
+            
+            <!-- Linear Progress Bar -->
+            <div class="progress">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                    role="progressbar" 
+                    style="width: 0%"
+                    aria-valuenow="0" 
+                    aria-valuemin="0" 
+                    aria-valuemax="100">
+                </div>
+            </div>
+            
+            <!-- Progress Messages -->
+            <div class="progress-message text-center">
+                <i class="bi bi-gear-wide-connected spin"></i>
+                <span class="progress-message-text">Initializing processing...</span>
+                <span class="progress-percent badge rounded-pill bg-primary">0%</span>
+            </div>
+            
+            <!-- Processing Details (appears occasionally) -->
+            <div class="progress-detail text-center" style="display: none;"></div>
+            
+            <!-- Optional Time Estimate -->
+            <div class="text-center mt-3">
+                <small class="text-muted">Estimated processing time: ~70 seconds</small>
+            </div>
+        </div>
 
         <!-- Summary Section -->
         <div id="summarySection" class="card summary-card shadow d-none">
@@ -119,43 +164,7 @@
                 <div class="apple-data-banner">
                     <span class="apple-logo"><i class="bi bi-apple"></i></span>
                     <p>Based on <strong>Apple's</strong> ground truth financial data</p>
-                </div>
-
-                <style>
-                    .apple-data-banner {
-                        background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%);
-                        border-left: 4px solid var(--primary-color);
-                        border-radius: 8px;
-                        padding: 1rem 1.5rem;
-                        margin-bottom: 2rem;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        gap: 0.75rem;
-                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03);
-                    }
-                    
-                    .apple-data-banner p {
-                        margin: 0;
-                        font-size: 1.1rem;
-                        color: #334155;
-                        font-weight: 500;
-                    }
-                    
-                    .apple-data-banner p strong {
-                        color: var(--primary-dark);
-                        font-weight: 700;
-                    }
-                    
-                    .apple-logo {
-                        font-size: 1.5rem;
-                        background: linear-gradient(135deg, #555555 0%, #000000 100%);
-                        -webkit-background-clip: text;
-                        -webkit-text-fill-color: transparent;
-                        display: inline-block;
-                    }
-                </style>
-                
+                </div> 
                 <div class="metrics-container">
                     <div class="metric-card">
                         <i class="bi bi-bullseye metric-icon relevancy-icon"></i>
@@ -177,242 +186,8 @@
                 </div>
             </div>
         </div>
-    </div>
-
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            // File upload handling
-            const dropZone = $('#dropZone');
-            const fileInput = $('#fileInput');
-            const selectedFiles = $('#selectedFiles');
-            
-            // Drag and drop functionality with enhanced feedback
-            dropZone.on('dragover', function(e) {
-                e.preventDefault();
-                $(this).addClass('dragover');
-            });
-            
-            dropZone.on('dragleave', function() {
-                $(this).removeClass('dragover');
-            });
-            
-            dropZone.on('drop', function(e) {
-                e.preventDefault();
-                $(this).removeClass('dragover');
-                const files = e.originalEvent.dataTransfer.files;
-                fileInput.prop('files', files);
-                updateFileList(files);
-            });
-            
-            fileInput.on('change', function() {
-                updateFileList(this.files);
-            });
-            
-            function updateFileList(files) {
-                selectedFiles.empty();
-                if (files.length > 0) {
-                    for (let i = 0; i < files.length; i++) {
-                        selectedFiles.append(
-                            `<div class="file-badge">
-                                <i class="bi bi-file-earmark-pdf"></i> ${files[i].name}
-                            </div>`
-                        );
-                    }
-                    
-                    // Add subtle animation to show files are selected
-                    selectedFiles.hide().fadeIn(300);
-                }
-            }
-            
-            // Form submission with enhanced UX
-            $('#uploadForm').submit(function(e) {
-                e.preventDefault();
-                const formData = new FormData(this);
-                
-                // Update stepper
-                $('#uploadStep').addClass('completed');
-                $('#processStep').addClass('active');
-                
-                // Show loading animation
-                $('#uploadSpinner').removeClass('d-none');
-                $('button[type="submit"]').prop('disabled', true);
-
-                $.ajax({
-                    url: '/',
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function(response) {
-                        // Update stepper
-                        $('#processStep').removeClass('active').addClass('completed');
-                        $('#summaryStep').addClass('active');
-                        
-                        // Format and display the summary with a typing effect
-                        const summaryText = response.preview.replace(/\n/g, '<br>');
-                        const summaryPreview = $('#summaryPreview');
-                        summaryPreview.empty();
-                        
-                        $('#summarySection').removeClass('d-none');
-                        $('#evalResults').addClass('d-none');
-                        
-                        // Simple typing effect for summary preview
-                        let i = 0;
-                        const speed = 5; // Adjust for faster/slower typing
-                        const textLength = summaryText.length;
-                        
-                        function typeWriter() {
-                            if (i < textLength) {
-                                if (i + 100 < textLength) {
-                                    // Speed up by adding chunks for better UX
-                                    summaryPreview.html(summaryText.substring(0, i + 100));
-                                    i += 100;
-                                } else {
-                                    summaryPreview.html(summaryText.substring(0, i + 1));
-                                    i++;
-                                }
-                                setTimeout(typeWriter, speed);
-                            }
-                        }
-                        
-                        // Start with a small delay for better UX
-                        setTimeout(function() {
-                            typeWriter();
-                        }, 300);
-                        
-                        // Smooth scroll to summary section
-                        $('html, body').animate({
-                            scrollTop: $('#summarySection').offset().top - 20
-                        }, 800);
-                    },
-                    error: function(xhr) {
-                        // Reset stepper state
-                        $('#processStep').removeClass('active');
-                        $('#uploadStep').removeClass('completed').addClass('active');
-                        
-                        const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : 'Unknown error occurred';
-                        
-                        // Show elegant error message with animation
-                        $('<div class="alert alert-danger mb-4 d-flex align-items-center" role="alert">')
-                            .html(`
-                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                <div>Error processing documents: ${errorMsg}</div>
-                            `)
-                            .hide()
-                            .prependTo('#uploadForm')
-                            .slideDown(300)
-                            .delay(5000)
-                            .fadeOut(500, function() { $(this).remove(); });
-                    },
-                    complete: function() {
-                        $('#uploadSpinner').addClass('d-none');
-                        $('button[type="submit"]').prop('disabled', false);
-                    }
-                });
-            });
-
-            // Evaluation with enhanced UX
-            $('#runEvaluation').click(function() {
-                // Update stepper
-                $('#summaryStep').addClass('completed');
-                $('#evaluateStep').addClass('active');
-                
-                $('#evalSpinner').removeClass('d-none');
-                $(this).prop('disabled', true);
-
-                $.ajax({
-                    url: '/evaluate',
-                    type: 'GET',
-                    success: function(response) {
-                        // Reset displayed values to ensure animation works
-                        $('#relevancyScore').text('0.0%');
-                        $('#faithfulnessScore').text('0.0%');
-                        $('#recallScore').text('0.0%');
-                        
-                        // Show evaluation results section with a fade effect
-                        $('#evalResults').hide().removeClass('d-none').fadeIn(500);
-                        
-                        // Store actual values
-                        const relevancy = (response.relevancy * 100).toFixed(1);
-                        const faithfulness = (response.faithfulness * 100).toFixed(1);
-                        const recall = (response.recall * 100).toFixed(1);
-                        
-                        // Delayed animation start for better UX
-                        setTimeout(function() {
-                            animateNumbers('#relevancyScore', relevancy);
-                            
-                            // Stagger animations for better visual effect
-                            setTimeout(function() {
-                                animateNumbers('#faithfulnessScore', faithfulness);
-                            }, 200);
-                            
-                            setTimeout(function() {
-                                animateNumbers('#recallScore', recall);
-                            }, 400);
-                        }, 400);
-                        
-                        // Smooth scroll to evaluation section
-                        $('html, body').animate({
-                            scrollTop: $('#evalResults').offset().top - 20
-                        }, 800);
-                    },
-                    error: function(xhr) {
-                        // Reset stepper state
-                        $('#evaluateStep').removeClass('active');
-                        
-                        const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : 'Unknown error occurred';
-                        
-                        // Show elegant error message with animation
-                        $('<div class="alert alert-danger mt-3 d-flex align-items-center" role="alert">')
-                            .html(`
-                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                <div>Evaluation failed: ${errorMsg}</div>
-                            `)
-                            .hide()
-                            .insertAfter('#runEvaluation')
-                            .slideDown(300)
-                            .delay(5000)
-                            .fadeOut(500, function() { $(this).remove(); });
-                    },
-                    complete: function() {
-                        $('#evalSpinner').addClass('d-none');
-                        $('#runEvaluation').prop('disabled', false);
-                    }
-                });
-            });
-            
-            // Enhanced number animation function for metrics
-            function animateNumbers(selector, targetValue) {
-                const $element = $(selector);
-                const duration = 1800;
-                const frameDuration = 1000/60;
-                const totalFrames = Math.round(duration / frameDuration);
-                const easeOutQuad = t => t * (2 - t);
-                
-                let frame = 0;
-                const countTo = parseFloat(targetValue);
-                
-                // Start from 0 always for cleaner animation
-                let count = 0;
-                
-                const animate = () => {
-                    frame++;
-                    const progress = easeOutQuad(frame / totalFrames);
-                    const currentCount = countTo * progress;
-                    
-                    $element.text(currentCount.toFixed(1) + '%');
-                    
-                    if (frame < totalFrames) {
-                        requestAnimationFrame(animate);
-                    } else {
-                        $element.text(countTo.toFixed(1) + '%');
-                    }
-                };
-                
-                requestAnimationFrame(animate);
-            }
-        });
-    </script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
