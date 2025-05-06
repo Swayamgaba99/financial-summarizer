@@ -8,7 +8,7 @@ from docx import Document as DocxDocument
 from docx.shared import Inches, Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 import openai
-from langchain_openai import OpenAI
+from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from langchain_community.callbacks import get_openai_callback
@@ -37,7 +37,11 @@ class SummaryGenerator:
 
         # Configure OpenAI
         openai.api_key = openai_api_key
-        self.llm = OpenAI(openai_api_key=openai_api_key, temperature=0.1)
+        self.llm = ChatOpenAI(
+                openai_api_key=openai_api_key,
+                model="gpt-4",
+                temperature=0.1
+            )
 
         # Load summary prompts
         self.summary_prompts = {
@@ -76,22 +80,22 @@ class SummaryGenerator:
                 "word_limit": 200
             },
             "business_segment_overview": {
-              "prompt": """Provide Business Segment Analysis.
+                "prompt": """Business Segment Analysis Requirements:
+                1. Identify top 3 revenue segments
+                2. For each segment provide:
+                - Percentage of total revenue
+                - Year-over-year growth percentage
+                - Profit margin percentage
 
-            **Required:**
-            - Top 3 revenue-generating segments
-            - For each segment, include:
-              - % of total revenue
-              - YoY growth %
-              - Profit margin %
+                Output Format:
+                - Segment Name: X% revenue | Y% growth | Z% margin
+                - Include brief description only for top 2 segments
 
-            **Format:**
-            - [Segment Name]: [X]% of revenue | Growth: [Y]% | Margin: [Z]%
-
-            **Instructions:**
-            - List in descending order of revenue contribution
-            - Quantify each metric precisely
-            - Give one line desc only about top 2
+                Rules:
+                - List segments by revenue contribution (highest first)
+                - Use exact numerical values
+                - No markdown formatting
+                - Maximum 100 words
 
             Context: {context_str}""",
               "query": "Extract revenue, growth, and margin metrics by business segment, highlighting top contributors.",
@@ -156,15 +160,15 @@ class SummaryGenerator:
             "credit_rating_analysis": {
                 "prompt": """Provide Credit rating analysis:
 
-              **Required Elements:**
-              - Current credit ratings from major agencies (Moody's, S&P, Fitch)
+              **Elements (Non-hypothetical):**
+              - Current credit ratings
               - Recent rating changes or outlook updates
               - Key debt metrics (Debt/EBITDA, interest coverage ratio)
               - Debt maturity schedule highlights
               - Liquidity position assessment
 
               **Format:**
-              Write a concise paragraph summarizing the company's credit profile. Include specific ratings, credit metrics, and any significant changes to the debt structure. Add a brief statement on the outlook for future rating changes based on financial projections.
+              Write a concise paragraph summarizing the company's credit profile. Include specific ratings, credit metrics, and any significant changes to the debt structure if. Add a brief statement on the outlook for future rating changes based on financial projections.
 
               **Instructions:**
               - Keep analysis under 150 words
@@ -304,7 +308,7 @@ class SummaryGenerator:
             1. The company's primary business and financial position
             2. Key performance highlights across segments
             3. The most significant strengths, weaknesses, and future outlook
-            4. Critical financial metrics if anys
+            4. Credit Rating Info
 
             Detailed Report:
             {detailed_report}

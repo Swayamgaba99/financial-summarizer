@@ -42,7 +42,7 @@ class RagaEvaluator:
         references = []
 
         query_engine = self.index.as_query_engine(
-            similarity_top_k=3,
+            similarity_top_k=6,
             vector_store_query_mode="default"
         )
 

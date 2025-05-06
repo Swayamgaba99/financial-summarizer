@@ -49,10 +49,10 @@ class DocumentIngester:
         logger.info("Creating FAISS index")
         try:
             # Get embedding dimension from model
-            dimension =   768
+            dimension =   384
 
             # Create vector store
-            faiss_index = faiss.IndexFlatL2(dimension)
+            faiss_index = faiss.IndexHNSWFlat(dimension, 32)
             vector_store = FaissVectorStore(faiss_index=faiss_index)
 
             # Parse and index documents
