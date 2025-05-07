@@ -48,7 +48,7 @@ class SummaryGenerator:
             "business_overview": {
                 "prompt": """Provide business overview:
 
-                **Required Elements:**
+                Required Elements:
                 1. Company Description:
                   - Founding year and headquarters
                   - location
@@ -72,7 +72,7 @@ class SummaryGenerator:
 
                 **Rules:**
                 - Include specific numbers and percentages
-                - For each 5 part give output in one single bullet point
+                - Use bullet points for clarity
                 - Maintain professional tone
 
                 Context: {context_str}""",
@@ -83,17 +83,15 @@ class SummaryGenerator:
                 "prompt": """Business Segment Analysis Requirements:
                 1. Identify top 3 revenue segments
                 2. For each segment provide:
-                - Percentage of total revenue
-                - Year-over-year growth percentage
-                - Profit margin percentage
+                - total revenue
+                - Year-over-year growth 
+                - Profit margin
 
                 Output Format:
-                - Segment Name: X% revenue | Y% growth | Z% margin
-                - Include brief description only for top 2 segments
+                - Brief description only for top 3 segments
 
                 Rules:
                 - List segments by revenue contribution (highest first)
-                - Use exact numerical values
                 - No markdown formatting
                 - Maximum 100 words
 
@@ -113,9 +111,6 @@ class SummaryGenerator:
                 2. Top 3 countries by revenue with percentages
 
                 3. Give YoY change and highlight growth market. (1 bullet point)
-
-                **Rules:**
-                - Use specific percentages
 
 
                 Context: {context_str}""",
@@ -160,8 +155,7 @@ class SummaryGenerator:
             "credit_rating_analysis": {
                 "prompt": """Provide Credit rating analysis:
 
-              **Elements (Non-hypothetical):**
-              - Current credit ratings
+              **Elements (if available in context):**
               - Recent rating changes or outlook updates
               - Key debt metrics (Debt/EBITDA, interest coverage ratio)
               - Debt maturity schedule highlights

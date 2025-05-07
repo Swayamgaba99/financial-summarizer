@@ -7,7 +7,7 @@ class Config:
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
     UPLOAD_FOLDER = 'instance/uploads'
     VECTOR_STORE_DIR = 'instance/uploads/vector_store'
-    OUTPUT_DIR = 'instanceoutput'
+    OUTPUT_DIR = 'instance/output'
     ALLOWED_EXTENSIONS = {'pdf'}
     LOG_LEVEL = 'DEBUG'  
     LOG_FILE = 'app.log'

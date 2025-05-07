@@ -509,13 +509,7 @@ $(document).ready(function() {
                     hue = Math.min(120, Math.max(0, currentCount * 1.2));
                 }
                 
-                // Apply gradient effect
-                $element.css({
-                    'background': `linear-gradient(135deg, hsl(${hue}, 80%, 40%) 0%, hsl(${hue}, 70%, 30%) 100%)`,
-                    '-webkit-background-clip': 'text',
-                    '-webkit-text-fill-color': 'transparent',
-                    'background-clip': 'text'
-                });
+ 
             }
             
             if (frame < totalFrames) {
@@ -533,49 +527,4 @@ $(document).ready(function() {
         
         requestAnimationFrame(animate);
     }
-    
-    // Add CSS for new animations
-    $('<style>')
-        .text(`
-            @keyframes shake-animation {
-                0% { transform: translateX(0); }
-                10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-                20%, 40%, 60%, 80% { transform: translateX(5px); }
-                100% { transform: translateX(0); }
-            }
-            
-            .shake-animation {
-                animation: shake-animation 0.8s cubic-bezier(.36,.07,.19,.97) both;
-            }
-            
-            @keyframes pulse-light {
-                0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
-                70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
-                100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
-            }
-            
-            .pulse-light {
-                animation: pulse-light 1.5s ease-out infinite;
-            }
-            
-            @keyframes pulse-complete {
-                0% { transform: scale(1); }
-                50% { transform: scale(1.05); }
-                100% { transform: scale(1); }
-            }
-            
-            .pulse-complete {
-                animation: pulse-complete 0.5s ease-out;
-            }
-            
-            .eval-message {
-                padding: 1rem;
-                background-color: rgba(59, 130, 246, 0.05);
-                border-radius: 12px;
-                border-left: 3px solid var(--primary-color);
-                font-weight: 500;
-                color: var(--primary-dark);
-            }
-        `)
-        .appendTo('head');
 });
